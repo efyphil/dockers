@@ -1,0 +1,47 @@
+FROM nvidia/cuda:8.0-cudnn6-devel-ubuntu16.04
+RUN apt-get update && apt-get install -y --no-install-recommends apt-utils
+ARG python=3.5
+
+ENV PATH=/usr/local/nvidia/bin:/usr/local/cuda-8.0/bin:${PATH} \
+   LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64:/usr/local/nvidia/lib:/usr/local/nvidia/lib64 \
+   PYTHON_VERSION=${python} \
+   PYTHONPATH=/demon/lmbspecialops/python \
+   NVIDIA_VISIBLE_DEVICES=all \
+   NVIDIA_DRIVER_CAPABILITIES=compute,utility \
+   NVIDIA_REQUIRE_CUDA="cuda>=8.0"
+
+RUN DEBIAN_FRONTEND=noninteractive && apt-get update -y && apt-get install -y --no-install-recommends \
+        build-essential \
+        git \
+        vim \
+        wget \
+        cmake-curses-gui\
+        ca-certificates \
+        libjpeg-dev \
+        libpng-dev \
+        python${PYTHON_VERSION} \
+        python-pip \
+        python${PYTHON_VERSION}-dev \
+        python3-pip pciutils cuda-core-8-0 libeigen3-dev \
+        libcurl4-openssl-dev curl vim make g++ python3-setuptools \
+        libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libhdf5-serial-dev python-numpy \
+        protobuf-compiler libgflags-dev libgoogle-glog-dev liblmdb-dev libboost-all-dev libopenblas-dev
+
+# RUN apt install -y python3
+RUN pip3 install --upgrade pip
+
+RUN mkdir /usr/lib/nvidia
+
+LABEL com.nvidia.volumes.neeapded="nvidia_driver"
+LABEL com.nvidia.cuda.version="${CUDA_VERSION}"
+
+RUN echo "/usr/local/nvidia/lib" >> /etc/ld.so.conf.d/nvidia.conf && \
+    echo "/usr/local/nvidia/lib64" >> /etc/ld.so.conf.d/nvidia.conf
+
+RUN pip3 install scipy scikit-image  setuptools wheel xarray minieigen  pandas\
+    protobuf numpy opencv-python cffi pypng tensorflow-gpu==1.4.0 pillow  matplotlib  Cython h5py
+RUN mkdir ~/temp && cd ~/temp
+RUN wget https://cmake.org/files/v3.12/cmake-3.12.2.tar.gz && tar -xzvf cmake-3.12.2.tar.gz && \
+  cd cmake-3.12.2/ && ./bootstrap --system-curl && make -j4 && make install
+RUN rm -rf cmake-3.12.2.tar.gz
+
